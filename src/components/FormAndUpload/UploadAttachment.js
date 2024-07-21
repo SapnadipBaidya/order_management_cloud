@@ -72,7 +72,7 @@ export default function InputFileUpload() {
           'Content-Type': 'multipart/form-data',
         },
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent?.total );
           setProgress(percentCompleted);
         },
       })
@@ -85,12 +85,12 @@ export default function InputFileUpload() {
             setResponseMessage(response.data)
           }
         })
-        .catch((error) => {
+        .catch((error)=>{
           console.error('Error uploading file:', error);
-          setFile(null)
-          setButtonLoading(false)
-          setOpen(true)
-          setResponseMessage(error.data)
+          setFile(null);
+          setButtonLoading(false);
+          setOpen(true);
+          setResponseMessage("error while uploding");
         });
     }
   };
