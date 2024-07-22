@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './DynamicSidePanel.css';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import NavBar from '../NavBar/NavBar';
+import NavBar from '../../NavBar/NavBar';
 
-const DynamicSidePanel = (props) => {
+const DynamicSidePanel = ({ loading, mapMenuResponse, flexDirection, component, onPanelWidthChange,renderCmp,setRenderCmp }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [panelWidth, setPanelWidth] = useState(250);
   const [isResizing, setIsResizing] = useState(false);
 
   const handleClick = () => {
     setIsCollapsed(!isCollapsed);
+    const newWidth = isCollapsed ? 250 : 50; // Adjust the width when collapsing/expanding
+    setPanelWidth(newWidth);
+    onPanelWidthChange(newWidth);
   };
 
   const handleMouseDown = (e) => {
@@ -21,7 +24,12 @@ const DynamicSidePanel = (props) => {
     e.preventDefault();
     if (isResizing) {
       const newWidth = e.clientX > 50 ? e.clientX : 50;
-      setPanelWidth(newWidth);
+      console.log(newWidth)
+      if (newWidth<=445 && newWidth>=215 ) {
+        setPanelWidth(newWidth);
+        onPanelWidthChange(newWidth);
+      }
+     
     }
   };
 
@@ -29,7 +37,7 @@ const DynamicSidePanel = (props) => {
     setIsResizing(false);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isResizing) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
@@ -51,22 +59,30 @@ const DynamicSidePanel = (props) => {
       <div
         className="resize-handle"
         onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
       />
       <div className="panel-content">
         <div className="panel-header-container">
-          <div>{props?.component}</div>
+          <div>{component}</div>
           <div className={`icon-container ${isCollapsed ? 'inverted' : ''}`} onClick={handleClick}>
             <ArrowBackIosIcon className="arrow-icon" />
           </div>
         </div>
-        <NavBar loading={props?.loading} mapMenuResponse={props?.mapMenuResponse} flexDirection={props?.flexDirection} />
+        {!loading && mapMenuResponse?.length > 0 ? (
+        <ul >
+          {mapMenuResponse.map((item, index) => (
+            <li key={index} >
+              <div onClick={()=>setRenderCmp(item.componentName)}>{item.componentName}</div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul >loading...</ul>
+      )}
       </div>
     </div>
   );
 };
 
-// Add defaultProps
 DynamicSidePanel.defaultProps = {
   loading: false,
   mapMenuResponse: [],

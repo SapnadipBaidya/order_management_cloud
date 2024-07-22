@@ -2,12 +2,13 @@
 import chatBotReducer from "./chatBotReducer";
 
 import { combineReducers } from "redux";
-import mapMenuReducer from "./mapMenuReducer";
+import { adminMenuReducer, mapMenuReducer } from "./mapMenuReducer";
 
 
 const reducers = combineReducers({
   chatBotReducer:chatBotReducer,
-  mapMenuReducer:mapMenuReducer
+  mapMenuReducer:mapMenuReducer,
+  adminMenuReducer:adminMenuReducer
 
 });
 

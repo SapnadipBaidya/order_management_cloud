@@ -20,3 +20,14 @@ export const mapMenuRequested = (data) => {
 
 
 
+export const adminMenuRequested = (data) => {
+  return (dispatch) => {
+    dispatch({
+      type: "ADMIN_MENU_REQUESTED",
+      payload: data,
+    });
+  };
+};
+
+
+

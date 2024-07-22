@@ -4,7 +4,7 @@ import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme) => ({
   nav: {
-    padding: theme.spacing(1)
+    padding: theme.spacing(2)
   },
   menu: {
     listStyle: "none",
@@ -24,7 +24,7 @@ function NavBar({ loading, mapMenuResponse,flexDirection }) {
   const classes = useStyles();
 
   return (
-    <nav className={classes.nav}>
+    <nav className={classes.nav} >
       {!loading && mapMenuResponse?.length > 0 ? (
         <ul className={classes.menu} style={{flexDirection:flexDirection == "column"?"column":"row"}}>
           {mapMenuResponse.map((item, index) => (

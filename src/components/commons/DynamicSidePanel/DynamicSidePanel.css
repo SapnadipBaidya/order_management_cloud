@@ -13,8 +13,8 @@
 
 .side-panel.collapsed {
   transform: translateX(-80%);
-  min-width: 25%;
-  max-width: 25%;
+  min-width: 17.5%;
+  max-width: 17.5%;
   transition:  transform 1s;
 }
 
