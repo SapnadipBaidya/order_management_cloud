@@ -1,7 +1,7 @@
 import "./App.css";
 import React, { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import NavBar from "./components/NavBar";
+import NavBar from "./components/NavBar/NavBar";
 import { useDispatch, useSelector } from "react-redux";
 import { mapMenuRequested } from "./state-management/actions";
 
@@ -26,11 +26,16 @@ const App = () => {
     dispatch(mapMenuRequested("CRD-0"));
   }, [dispatch]);
 
+  const loading = useSelector((state) => state?.mapMenuReducer?.loading);
+  const mapMenuResponse = useSelector(
+    (state) => state?.mapMenuReducer?.responseData
+  );
+
   return (
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <div>
-          <NavBar />
+          <NavBar loading={loading} mapMenuResponse={mapMenuResponse} flexDirection="row"/>
           <Routes>
             {routes.map(({ path, component: Component }) => (
               <Route key={path} path={path} element={<Component />} />
@@ -40,6 +45,12 @@ const App = () => {
       </Suspense>
     </Router>
   );
+};
+
+
+// Add defaultProps
+App.defaultProps = {
+  flexDirection: 'row',
 };
 
 export default App;

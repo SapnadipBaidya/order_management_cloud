@@ -1,0 +1,109 @@
+/* DynamicSidePanel.css */
+.side-panel {
+  position: fixed;
+  left: 0;
+  height: 100%;
+  background-color: #333;
+  color: #fff;
+  overflow: hidden;
+  transition:  transform 1s;
+  min-width: 15%;
+  max-width: 30%;
+}
+
+.side-panel.collapsed {
+  transform: translateX(-80%);
+  min-width: 25%;
+  max-width: 25%;
+  transition:  transform 1s;
+}
+
+.panel-content {
+  padding: 20px;
+}
+
+.panel-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-content h2 {
+  margin-top: 0;
+}
+
+.panel-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.panel-content ul li {
+  margin: 10px 0;
+}
+
+.toggle-button {
+  position: absolute;
+  top: 10px;
+  right: -25px;
+  width: 25px;
+  height: 25px;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.content {
+  margin-left: 250px;
+  padding: 20px;
+  transition: margin-left 0.3s;
+}
+
+.side-panel.collapsed ~ .content {
+  margin-left: 50px;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.icon-container {
+  cursor: pointer;
+}
+
+.arrow-icon {
+  transition: transform 0.3s ease;
+}
+
+.icon-container.inverted .arrow-icon {
+  transform: rotate(180deg);
+  animation: spin-clockwise 0.3s ease;
+}
+
+.icon-container:not(.inverted) .arrow-icon {
+  transform: rotate(0deg);
+  animation: spin-counterclockwise 0.3s ease;
+}
+
+@keyframes spin-clockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes spin-counterclockwise {
+  from {
+    transform: rotate(180deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
