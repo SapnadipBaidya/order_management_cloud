@@ -29,5 +29,15 @@ export const adminMenuRequested = (data) => {
   };
 };
 
+export const dropStoreRequested = (data) => {
+  return (dispatch) => {
+    dispatch({
+      type: "DROP_STORE_REQUESTED",
+      payload: data,
+    });
+  };
+};
+
+
 
 

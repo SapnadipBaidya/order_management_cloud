@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   TextField,
@@ -7,6 +7,9 @@ import {
   Typography,
   Box
 } from '@mui/material';
+import SearchableDropdown from '../commons/SearchableDropdown/SearchableDropdown';
+import { dropStoreRequested } from '../../state-management/actions';
+import { useDispatch } from 'react-redux';
 
 const currencies = [
   {
@@ -25,6 +28,7 @@ const currencies = [
 ];
 
 const OnlineCreditApplicationForm = () => {
+  const dispatch = useDispatch();
   const [formValues, setFormValues] = useState({
     address: '',
     orderAmount: '',
@@ -47,6 +51,10 @@ const OnlineCreditApplicationForm = () => {
     console.log('Form values:', formValues);
   };
 
+
+  useEffect(()=>{
+    dispatch(dropStoreRequested("COMMON_CURRENCY_STORE"));
+  },[])
   return (
     <Container maxWidth="sm">
       <Typography variant="h4" component="h1" gutterBottom>
@@ -114,6 +122,7 @@ const OnlineCreditApplicationForm = () => {
           margin="normal"
           required
         />
+        <SearchableDropdown label="SELECT CURENCY"/>
         <Button type="submit" variant="contained" color="primary" sx={{ mt: 3 }}>
           Submit
         </Button>

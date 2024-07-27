@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 
+//here all import for admin screen related compoennts are needed
 const AdminCustomerData = lazy(() => import("../../AdminScreen/subComponents/AdminCustomerData"));
 const AdminOrderForm = lazy(() => import("../../AdminScreen/subComponents/AdminOrderForm"));
 const AdminOrderWorklist = lazy(() => import("../../AdminScreen/subComponents/AdminOrderWorklist"));
