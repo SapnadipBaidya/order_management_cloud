@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Autocomplete, TextField } from "@mui/material";
 import { useSelector } from "react-redux";
 
@@ -7,13 +7,15 @@ const SearchableDropdown = ({ label, onSelectionChange }) => {
     (state) => state?.dropdownStoreReducer?.dropDownResponse
   );
   const loading = useSelector((state) => state?.dropdownStoreReducer?.loading);
-  const optionsRef = useRef([]);
+  const [options, setOptions] = useState([]);
 
   useEffect(() => {
     if (!loading) {
-      optionsRef.current = dropdownData;
+      setOptions(dropdownData);
     }
   }, [dropdownData, loading]);
+  
+  const memoizedOptions = useMemo(() => options, [options]);
 
   const handleChange = (event, newValue) => {
     onSelectionChange(newValue);
@@ -23,7 +25,7 @@ const SearchableDropdown = ({ label, onSelectionChange }) => {
     <Autocomplete
       disablePortal
       id="searchable-dropdown"
-      options={optionsRef.current}
+      options={memoizedOptions}
       getOptionLabel={(option) => option?.label || ""}
       onChange={handleChange}
       renderInput={(params) => <TextField {...params} label={label} />}
