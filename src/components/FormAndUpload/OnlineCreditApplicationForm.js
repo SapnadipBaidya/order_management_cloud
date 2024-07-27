@@ -1,40 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import {
   Container,
   TextField,
   MenuItem,
   Button,
   Typography,
-  Box
-} from '@mui/material';
-import SearchableDropdown from '../commons/SearchableDropdown/SearchableDropdown';
-import { dropStoreRequested } from '../../state-management/actions';
-import { useDispatch } from 'react-redux';
+  Box,
+} from "@mui/material";
+import SearchableDropdown from "../commons/SearchableDropdown/SearchableDropdown";
+import { dropStoreRequested } from "../../state-management/actions";
+import { useDispatch } from "react-redux";
 
 const currencies = [
   {
-    value: 'USD',
-    label: 'USD',
+    value: "USD",
+    label: "USD",
   },
   {
-    value: 'EUR',
-    label: 'EUR',
+    value: "EUR",
+    label: "EUR",
   },
   {
-    value: 'JPY',
-    label: 'JPY',
+    value: "JPY",
+    label: "JPY",
   },
   // Add more currencies as needed
 ];
 
 const OnlineCreditApplicationForm = () => {
+  const [selectedOption, setSelectedOption] = useState(null);
   const dispatch = useDispatch();
   const [formValues, setFormValues] = useState({
-    address: '',
-    orderAmount: '',
-    localCurrency: '',
-    globalCurrency: '',
-    creditLimit: '',
+    address: "",
+    orderAmount: "",
+    localCurrency: "",
+    globalCurrency: "",
+    creditLimit: "",
   });
 
   const handleChange = (e) => {
@@ -48,13 +49,16 @@ const OnlineCreditApplicationForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Handle form submission logic
-    console.log('Form values:', formValues);
+    console.log("Form values:", formValues);
   };
 
-
-  useEffect(()=>{
+  useEffect(() => {
     dispatch(dropStoreRequested("COMMON_CURRENCY_STORE"));
-  },[])
+  }, []);
+  const handleSelectionChange = (option) => {
+    setSelectedOption(option);
+    console.log("Selected option in parent:", option);
+  };
   return (
     <Container maxWidth="sm">
       <Typography variant="h4" component="h1" gutterBottom>
@@ -122,8 +126,16 @@ const OnlineCreditApplicationForm = () => {
           margin="normal"
           required
         />
-        <SearchableDropdown label="SELECT CURENCY"/>
-        <Button type="submit" variant="contained" color="primary" sx={{ mt: 3 }}>
+        <SearchableDropdown
+          label="SELECT CURENCY"
+          onSelectionChange={handleSelectionChange}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3 }}
+        >
           Submit
         </Button>
       </Box>
