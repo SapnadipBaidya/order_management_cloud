@@ -19,12 +19,21 @@ const useStyles = makeStyles((theme) => ({
     height: "35vh",
     maxHeight: "35vh",
     overflow: "scroll",
-    padding :"1vh"
+    padding: "1vh",
   },
   actionFooter: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  dropContainer: {
+    display: "flex",
+    flexDirection: "column",
+    border: "dotted 0.15vw black",
+    borderRadius: "0.2vw",
+    height: "65vh",
+    maxHeight: "65vh",
+    padding: "5vh",
   },
 }));
 
@@ -39,6 +48,7 @@ function AdminOrderForm() {
     validDisplayName: true,
   });
   const [currentFields, setCurrentFields] = React.useState(new Map());
+  const [dropppedItems, setDroppedItems] = React.useState(new Map());
 
   const [fieldTypes, setFieldTypes] = React.useState([
     { key: "number", value: "Number" },
@@ -56,16 +66,28 @@ function AdminOrderForm() {
     []
   );
 
+
+  const createBtnDisabled = (fieldName, fieldType, displayText) => {
+    return !(fieldName && fieldType && displayText && !dropppedItems.get(fieldName));
+  };
+
+  const editBtnDisabled = (fieldName, fieldType, displayText) => {
+    return !(dropppedItems.get(fieldName));
+  };
+
   const validateInput = React.useCallback((value) => {
     return value.match(/\s/);
   }, []);
 
   const handleFieldTypeChange = React.useCallback(
-    (e, i) => {
+    (e) => {
       setFieldType(e);
-      const updatedFieldTypes = memoizedFieldTypes.map((item, index) => {
-        return index === i
-          ? { ...item, variant: item.variant === "contained" ? "outlined" : "contained" }
+      const updatedFieldTypes = memoizedFieldTypes.map((item) => {
+        return item.key === e
+          ? {
+              ...item,
+              variant: item.variant === "contained" ? "outlined" : "contained",
+            }
           : item;
       });
       setFieldTypes(updatedFieldTypes);
@@ -77,7 +99,7 @@ function AdminOrderForm() {
     (event) => {
       const value = event?.target?.value;
       const hasError = validateInput(value);
-      setFieldName(value);
+      setFieldName(value.trim());
       setFieldNameHasError((prev) => ({ ...prev, validFieldName: hasError }));
     },
     [validateInput]
@@ -90,23 +112,107 @@ function AdminOrderForm() {
     setFieldNameHasError((prev) => ({ ...prev, validDisplayName: hasError }));
   }, []);
 
-  // Memoizing field creation function
-  const handleFieldCreate = React.useCallback(() => {
-    setCurrentFields((prevFields) => {
-      const updatedFields = new Map(prevFields);
-      updatedFields.set(fieldName, { fieldType, displayText });
-      return updatedFields;
+  const handleFieldDelete = (key) => {
+    setDroppedItems((prevDroppedItems) => {
+      const updatedDroppedItems = new Map(prevDroppedItems);
+      updatedDroppedItems.delete(key);
+  
+      // Update both droppedItems and currentFields at the same time
+      setCurrentFields((prevCurrentFields) => {
+        const updatedCurrentFields = new Map(prevCurrentFields);
+        updatedCurrentFields.delete(key);
+        return updatedCurrentFields;
+      });
+  
+      return updatedDroppedItems;
     });
-
-    setFieldName("");
     setDisplayText("");
-    setFieldTypes(memoizedFieldTypes); // Reset field types
-  }, [fieldName, fieldType, displayText, memoizedFieldTypes]);
+    setFieldType("");
+    handleFieldTypeChange("")
+
+  };
+const handleDraggablefieldClick= (key,value)=>{
+    setFieldName(key)
+    setDisplayText(value?.displayText)
+    handleFieldTypeChange(value?.fieldType)
+}
+// Helper function to add or update field in a given map
+const updateFieldInMap = (map, key, value) => {
+  const updatedMap = new Map(map);
+  updatedMap.set(key, value);
+  return updatedMap;
+};
+  // Memoizing field creation function
+  const handleFieldOperation = React.useCallback(
+    (actionType) => {
+      switch (actionType) {
+        case "create":
+          setCurrentFields((prevFields) =>
+            updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
+          );
+          break;
+        case "edit":
+          setDroppedItems((prevFields) =>
+            updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
+          );
+          break;
+        default:
+          console.warn(`Unknown action type: ${actionType}`);
+          break;
+      }
+  
+      // Reset the form states after operation
+      setFieldName("");
+      setDisplayText("");
+      setFieldTypes(memoizedFieldTypes);
+    },
+    [fieldName, fieldType, displayText, memoizedFieldTypes]
+  );
+  
+
+// For creating a new field
+const handleFieldCreate = React.useCallback(() => {
+  handleFieldOperation("create");
+}, [handleFieldOperation]);
+
+// For editing an existing field
+const handleFieldEdit = React.useCallback(() => {
+  handleFieldOperation("edit");
+}, [handleFieldOperation]);
+
 
   React.useEffect(() => {
     console.log(currentFields);
   }, [currentFields]);
 
+  const handleOnDrop = (event) => {
+    event.preventDefault();
+
+    // Retrieve the data that was set during the drag event
+    const data = event.dataTransfer.getData("text/plain");
+    if (data) {
+      const parsedData = JSON.parse(data);
+      // setDroppedItems((prevItems) => [...prevItems, parsedData]);
+      setDroppedItems((prevFields) => {
+        const updatedFields = new Map(prevFields);
+        updatedFields.set(parsedData?.fieldName, {
+          fieldType: parsedData?.fieldType,
+          displayText: parsedData?.displayText,
+        });
+        return updatedFields;
+      });
+
+      setCurrentFields((prevFields) => {
+        const updatedFields = new Map(prevFields);
+        updatedFields.delete(parsedData?.fieldName)
+        return updatedFields;
+      });
+
+      console.log("Dropped:", parsedData);
+    } else {
+      console.log("No data found");
+    }
+  };
   return (
     <div className={classes.parentContainer}>
       <div>
@@ -121,6 +227,7 @@ function AdminOrderForm() {
             error={fieldNameHasError?.validFieldName}
             onChange={handleFieldNameChange}
             value={fieldName} // Controlled input
+            disabled={!editBtnDisabled(fieldName,fieldType,displayText)}
           />
           <TextField
             fullWidth
@@ -142,29 +249,57 @@ function AdminOrderForm() {
                 variant={e?.variant ? e?.variant : "outlined"}
                 clickable
                 key={e.key}
-                onClick={() => handleFieldTypeChange(e?.key, i)}
+                onClick={() => handleFieldTypeChange(e?.key)}
               />
             ))}
           </Stack>
         </div>
         <Divider style={{ margin: 10 }} />
         <div className={classes.actionFooter}>
-          <Button variant="contained" onClick={handleFieldCreate}>
+          <Button variant="contained" onClick={handleFieldCreate} disabled={createBtnDisabled(fieldName,fieldType,displayText)}>
             Create
           </Button>
-          <Button variant="outlined">Edit</Button>
+          <Button variant="outlined" onClick={handleFieldEdit} disabled={editBtnDisabled(fieldName,fieldType,displayText)}>Edit</Button>
         </div>
         <Divider style={{ margin: 10 }} />
         <Card className={classes.dynamicFieldContainer}>
           <Stack direction="column" spacing={1}>
             {Array.from(currentFields.entries()).map(([key, value]) => (
-              <DraggableField key={key} fieldName={key} displayText={value?.displayText} />
+              <DraggableField
+                key={key}
+                fieldName={key}
+                fieldType={value.fieldType}
+                displayText={value?.displayText}
+                handleOnDelete={()=>handleFieldDelete(key)}
+                handleOnClick={()=>handleDraggablefieldClick(key,value)}
+              />
             ))}
           </Stack>
         </Card>
       </div>
       <div>
         <h1>Drag to Here for quick saving</h1>
+        <div
+          className={classes.dropContainer}
+          onDrop={handleOnDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <Stack direction="column" spacing={1}>
+            {Array.from(dropppedItems.entries()).map(([key, value]) => (
+              <DraggableField
+                key={key}
+                fieldName={key}
+                fieldType={value.fieldType}
+                displayText={value?.displayText}
+                handleOnDelete={()=>handleFieldDelete(key)}
+                handleOnClick={()=>handleDraggablefieldClick(key,value)}
+                
+              />
+            ))}
+          </Stack>
+        </div>
       </div>
     </div>
   );

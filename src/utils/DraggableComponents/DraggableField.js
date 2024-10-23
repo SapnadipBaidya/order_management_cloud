@@ -14,11 +14,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function DraggableField({fieldName,displayText}) {
-    debugger
+function DraggableField({fieldName,fieldType,displayText,handleOnDelete,handleOnClick}) {
   const classes = useStyles();
+  const handleOnDragStart =(event,fieldName,fieldType,displayText)=>{
+    let data = {fieldName:fieldName,fieldType:fieldType,displayText:displayText}
+    event.dataTransfer.setData("text/plain", JSON.stringify(data))
+  }
   return (
-    <div className={classes.container} draggable>
+    <div className={classes.container} draggable={true}   onDragStart={(e)=>handleOnDragStart(e,fieldName,fieldType,displayText)}>
       {" "}
       <DragIndicatorIcon fontSize="small" />
       <div
@@ -27,11 +30,12 @@ function DraggableField({fieldName,displayText}) {
           justifyContent: "center",
           alignItems: "center",
         }}
+        onClick={handleOnClick}
       >
-       {fieldName||"fieldName"} - {displayText||"displayText"}
+       {fieldName||"fieldName"} - {fieldType||"fieldType"} - {displayText||"displayText"}
       
       </div>
-      <DeleteForeverIcon fontSize="small"/>
+      <DeleteForeverIcon fontSize="small" onClick={handleOnDelete}/>
     </div>
   );
 }
