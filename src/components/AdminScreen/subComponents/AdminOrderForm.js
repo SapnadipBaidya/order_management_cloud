@@ -68,11 +68,18 @@ function AdminOrderForm() {
 
 
   const createBtnDisabled = (fieldName, fieldType, displayText) => {
-    return !(fieldName && fieldType && displayText && !dropppedItems.get(fieldName));
+    return !(fieldName && fieldType && displayText && !dropppedItems.get(fieldName));  
   };
 
   const editBtnDisabled = (fieldName, fieldType, displayText) => {
     return !(dropppedItems.get(fieldName));
+  };
+
+  const cancelBtnDisabled = (fieldName, fieldType, displayText) => {
+    return !(
+      !createBtnDisabled(fieldName, fieldType, displayText) ||
+      !editBtnDisabled(fieldName, fieldType, displayText)
+    );
   };
 
   const validateInput = React.useCallback((value) => {
@@ -116,14 +123,14 @@ function AdminOrderForm() {
     setDroppedItems((prevDroppedItems) => {
       const updatedDroppedItems = new Map(prevDroppedItems);
       updatedDroppedItems.delete(key);
-  
+
       // Update both droppedItems and currentFields at the same time
       setCurrentFields((prevCurrentFields) => {
         const updatedCurrentFields = new Map(prevCurrentFields);
         updatedCurrentFields.delete(key);
         return updatedCurrentFields;
       });
-  
+
       return updatedDroppedItems;
     });
     setDisplayText("");
@@ -136,12 +143,12 @@ const handleDraggablefieldClick= (key,value)=>{
     setDisplayText(value?.displayText)
     handleFieldTypeChange(value?.fieldType)
 }
-// Helper function to add or update field in a given map
-const updateFieldInMap = (map, key, value) => {
-  const updatedMap = new Map(map);
-  updatedMap.set(key, value);
-  return updatedMap;
-};
+  // Helper function to add or update field in a given map
+  const updateFieldInMap = (map, key, value) => {
+    const updatedMap = new Map(map);
+    updatedMap.set(key, value);
+    return updatedMap;
+  };
   // Memoizing field creation function
   const handleFieldOperation = React.useCallback(
     (actionType) => {
@@ -160,7 +167,7 @@ const updateFieldInMap = (map, key, value) => {
           console.warn(`Unknown action type: ${actionType}`);
           break;
       }
-  
+
       // Reset the form states after operation
       setFieldName("");
       setDisplayText("");
@@ -170,16 +177,18 @@ const updateFieldInMap = (map, key, value) => {
   );
   
 
-// For creating a new field
-const handleFieldCreate = React.useCallback(() => {
-  handleFieldOperation("create");
-}, [handleFieldOperation]);
+  // For creating a new field
+  const handleFieldCreate = React.useCallback(() => {
+    handleFieldOperation("create");
+  }, [handleFieldOperation]);
 
-// For editing an existing field
-const handleFieldEdit = React.useCallback(() => {
-  handleFieldOperation("edit");
-}, [handleFieldOperation]);
-
+  // For editing an existing field
+  const handleFieldEdit = React.useCallback(() => {
+    handleFieldOperation("edit");
+  }, [handleFieldOperation]);
+  const handleFieldEditCreateCancel = React.useCallback(() => {
+    handleFieldOperation("cancel");
+  }, [handleFieldOperation]);
 
   React.useEffect(() => {
     console.log(currentFields);
@@ -204,7 +213,7 @@ const handleFieldEdit = React.useCallback(() => {
 
       setCurrentFields((prevFields) => {
         const updatedFields = new Map(prevFields);
-        updatedFields.delete(parsedData?.fieldName)
+        updatedFields.delete(parsedData?.fieldName);
         return updatedFields;
       });
 
@@ -227,7 +236,7 @@ const handleFieldEdit = React.useCallback(() => {
             error={fieldNameHasError?.validFieldName}
             onChange={handleFieldNameChange}
             value={fieldName} // Controlled input
-            disabled={!editBtnDisabled(fieldName,fieldType,displayText)}
+            disabled={!editBtnDisabled(fieldName, fieldType, displayText)}
           />
           <TextField
             fullWidth
@@ -256,10 +265,15 @@ const handleFieldEdit = React.useCallback(() => {
         </div>
         <Divider style={{ margin: 10 }} />
         <div className={classes.actionFooter}>
-          <Button variant="contained" onClick={handleFieldCreate} disabled={createBtnDisabled(fieldName,fieldType,displayText)}>
+          <Button variant="contained" onClick={handleFieldCreate} disabled={createBtnDisabled(fieldName, fieldType, displayText)}>
             Create
           </Button>
-          <Button variant="outlined" onClick={handleFieldEdit} disabled={editBtnDisabled(fieldName,fieldType,displayText)}>Edit</Button>
+          <Button variant="outlined" onClick={handleFieldEdit} disabled={editBtnDisabled(fieldName, fieldType, displayText)}>
+            Edit
+          </Button>
+          <Button variant="text" onClick={handleFieldEditCreateCancel} disabled={cancelBtnDisabled(fieldName, fieldType, displayText)}>
+            Cancel
+          </Button>
         </div>
         <Divider style={{ margin: 10 }} />
         <Card className={classes.dynamicFieldContainer}>
@@ -270,8 +284,8 @@ const handleFieldEdit = React.useCallback(() => {
                 fieldName={key}
                 fieldType={value.fieldType}
                 displayText={value?.displayText}
-                handleOnDelete={()=>handleFieldDelete(key)}
-                handleOnClick={()=>handleDraggablefieldClick(key,value)}
+                handleOnDelete={() => handleFieldDelete(key)}
+                handleOnClick={() => handleDraggablefieldClick(key, value)}
               />
             ))}
           </Stack>
@@ -293,9 +307,8 @@ const handleFieldEdit = React.useCallback(() => {
                 fieldName={key}
                 fieldType={value.fieldType}
                 displayText={value?.displayText}
-                handleOnDelete={()=>handleFieldDelete(key)}
-                handleOnClick={()=>handleDraggablefieldClick(key,value)}
-                
+                handleOnDelete={() => handleFieldDelete(key)}
+                handleOnClick={() => handleDraggablefieldClick(key, value)}
               />
             ))}
           </Stack>
