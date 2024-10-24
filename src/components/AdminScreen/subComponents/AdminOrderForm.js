@@ -34,6 +34,8 @@ const useStyles = makeStyles((theme) => ({
     height: "65vh",
     maxHeight: "65vh",
     padding: "5vh",
+    width:"25vw",
+    maxWidth:"25vw"
   },
 }));
 
