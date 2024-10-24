@@ -14,7 +14,6 @@ const useStyles = makeStyles((theme) => ({
   dynamicFieldContainer: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-evenly",
     border: "dashed 1px black",
     height: "35vh",
     maxHeight: "35vh",
