@@ -39,7 +39,8 @@ const useStyles = makeStyles((theme) => ({
 
 function AdminOrderForm() {
   const classes = useStyles();
-
+  const dragItem = React.useRef("");
+  const dragOverItem = React.useRef("");
   const [fieldType, setFieldType] = React.useState("None");
   const [fieldName, setFieldName] = React.useState("");
   const [displayText, setDisplayText] = React.useState("");
@@ -138,6 +139,25 @@ function AdminOrderForm() {
     handleFieldTypeChange("")
 
   };
+  const handleDragEnd = (e, dragItem, dragOverItem) => {
+    // Get the current items in the Map
+    dropppedItems.get(dragItem.current);
+    dropppedItems.get(dragOverItem.current);
+
+    // Convert Map to an array to allow swapping
+    let swappableArr = Array.from(dropppedItems);
+
+    // Find the index of the dragItem and dragOverItem in the array
+    let dragItemIndex = swappableArr.findIndex(item => item[0] === dragItem.current);
+    let dragOverItemIndex = swappableArr.findIndex(item => item[0] === dragOverItem.current);
+
+    // Swap the items in the array using array destructuring
+    [swappableArr[dragItemIndex], swappableArr[dragOverItemIndex]] = [swappableArr[dragOverItemIndex], swappableArr[dragItemIndex]];
+
+    // Convert the array back to a Map after swapping
+    setDroppedItems(new Map(swappableArr));
+}
+
 const handleDraggablefieldClick= (key,value)=>{
     setFieldName(key)
     setDisplayText(value?.displayText)
@@ -175,7 +195,7 @@ const handleDraggablefieldClick= (key,value)=>{
     },
     [fieldName, fieldType, displayText, memoizedFieldTypes]
   );
-  
+
 
   // For creating a new field
   const handleFieldCreate = React.useCallback(() => {
@@ -286,6 +306,9 @@ const handleDraggablefieldClick= (key,value)=>{
                 displayText={value?.displayText}
                 handleOnDelete={() => handleFieldDelete(key)}
                 handleOnClick={() => handleDraggablefieldClick(key, value)}
+                handleDragEnd={(e)=>handleDragEnd(e,dragItem,dragOverItem)}
+                dragItem={dragItem}
+                dragOverItem={dragOverItem}
               />
             ))}
           </Stack>
@@ -309,6 +332,9 @@ const handleDraggablefieldClick= (key,value)=>{
                 displayText={value?.displayText}
                 handleOnDelete={() => handleFieldDelete(key)}
                 handleOnClick={() => handleDraggablefieldClick(key, value)}
+                handleDragEnd={(e)=>handleDragEnd(e,dragItem,dragOverItem)}
+                dragItem={dragItem}
+                dragOverItem={dragOverItem}
               />
             ))}
           </Stack>

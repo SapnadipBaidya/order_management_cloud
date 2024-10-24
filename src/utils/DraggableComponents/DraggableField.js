@@ -14,14 +14,15 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function DraggableField({fieldName,fieldType,displayText,handleOnDelete,handleOnClick}) {
+function DraggableField({fieldName,fieldType,displayText,handleOnDelete,handleOnClick,handleDragEnd,dragItem,dragOverItem}) {
   const classes = useStyles();
   const handleOnDragStart =(event,fieldName,fieldType,displayText)=>{
+    dragItem.current = fieldName
     let data = {fieldName:fieldName,fieldType:fieldType,displayText:displayText}
     event.dataTransfer.setData("text/plain", JSON.stringify(data))
   }
   return (
-    <div className={classes.container} draggable={true}   onDragStart={(e)=>handleOnDragStart(e,fieldName,fieldType,displayText)}>
+    <div className={classes.container} draggable={true}   onDragStart={(e)=>handleOnDragStart(e,fieldName,fieldType,displayText)} onDragEnter={()=>dragOverItem.current = fieldName} onDragEnd={(e)=>handleDragEnd(e)} onDragOver={(e)=>e.preventDefault()}>
       {" "}
       <DragIndicatorIcon fontSize="small" />
       <div
