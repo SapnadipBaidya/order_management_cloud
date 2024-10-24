@@ -103,15 +103,31 @@ function AdminOrderForm() {
     [memoizedFieldTypes]
   );
 
-  const handleFieldNameChange = React.useCallback(
-    (event) => {
-      const value = event?.target?.value;
-      const hasError = validateInput(value);
-      setFieldName(value.trim());
-      setFieldNameHasError((prev) => ({ ...prev, validFieldName: hasError }));
-    },
-    [validateInput]
-  );
+  const handleFieldNameChange = (event) => {
+    const value = event?.target?.value?.trim(); // Trim input value right away
+    const hasError = validateInput(value);
+  
+    setFieldName(value); // Update fieldName
+  
+    // Define a common function to handle dropped and current fields
+    const handleFieldClickIfExists = (map) => {
+      const field = map.get(value);
+      if (field) {
+        handleDraggablefieldClick(value, {
+          displayText: field?.displayText,
+          fieldType: field?.fieldType,
+        });
+      }
+    };
+  
+    // Check for the field in both maps
+    handleFieldClickIfExists(dropppedItems);
+    handleFieldClickIfExists(currentFields);
+  
+    // Update field name error state
+    setFieldNameHasError((prev) => ({ ...prev, validFieldName: hasError }));
+  };
+  
 
   const handleDisplayTextChange = React.useCallback((event) => {
     const value = event?.target?.value;
@@ -134,6 +150,7 @@ function AdminOrderForm() {
 
       return updatedDroppedItems;
     });
+    setFieldName("");
     setDisplayText("");
     setFieldType("");
     handleFieldTypeChange("")
@@ -157,44 +174,51 @@ function AdminOrderForm() {
     // Convert the array back to a Map after swapping
     setDroppedItems(new Map(swappableArr));
 }
+const [isDroppedFieldActive,setIsDroppedFieldActive] = React.useState(false);
 
 const handleDraggablefieldClick= (key,value)=>{
+    setIsDroppedFieldActive(true)
     setFieldName(key)
     setDisplayText(value?.displayText)
     handleFieldTypeChange(value?.fieldType)
 }
+
   // Helper function to add or update field in a given map
   const updateFieldInMap = (map, key, value) => {
     const updatedMap = new Map(map);
     updatedMap.set(key, value);
     return updatedMap;
   };
-  // Memoizing field creation function
-  const handleFieldOperation = React.useCallback(
-    (actionType) => {
-      switch (actionType) {
-        case "create":
-          setCurrentFields((prevFields) =>
-            updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
-          );
-          break;
-        case "edit":
-          setDroppedItems((prevFields) =>
-            updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
-          );
-          break;
-        default:
-          console.warn(`Unknown action type: ${actionType}`);
-          break;
-      }
-
-      // Reset the form states after operation
+// Memoizing field creation function
+const handleFieldOperation = React.useCallback(
+  (actionType) => {
+    const resetFields = () => {
       setFieldName("");
       setDisplayText("");
       setFieldTypes(memoizedFieldTypes);
-    },
-    [fieldName, fieldType, displayText, memoizedFieldTypes]
-  );
+    };
+
+    switch (actionType) {
+      case "create":
+        setCurrentFields((prevFields) =>
+          updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
+        );
+        resetFields();
+        break;
+      case "edit":
+        setDroppedItems((prevFields) =>
+          updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
+        );
+        break;
+      default:
+        console.warn(`Unknown action type: ${actionType}`);
+        resetFields();
+        break;
+    }
+  },
+  [fieldName, fieldType, displayText, memoizedFieldTypes]
+);
+
 
 
   // For creating a new field
@@ -206,13 +230,13 @@ const handleDraggablefieldClick= (key,value)=>{
   const handleFieldEdit = React.useCallback(() => {
     handleFieldOperation("edit");
   }, [handleFieldOperation]);
+
+  // For canceling an create/edit field operation
   const handleFieldEditCreateCancel = React.useCallback(() => {
+    setIsDroppedFieldActive(false)
     handleFieldOperation("cancel");
   }, [handleFieldOperation]);
 
-  React.useEffect(() => {
-    console.log(currentFields);
-  }, [currentFields]);
 
   const handleOnDrop = (event) => {
     event.preventDefault();
@@ -221,15 +245,7 @@ const handleDraggablefieldClick= (key,value)=>{
     const data = event.dataTransfer.getData("text/plain");
     if (data) {
       const parsedData = JSON.parse(data);
-      // setDroppedItems((prevItems) => [...prevItems, parsedData]);
-      setDroppedItems((prevFields) => {
-        const updatedFields = new Map(prevFields);
-        updatedFields.set(parsedData?.fieldName, {
-          fieldType: parsedData?.fieldType,
-          displayText: parsedData?.displayText,
-        });
-        return updatedFields;
-      });
+      setDroppedItems((prevFields) =>   updateFieldInMap(prevFields, parsedData?.fieldName, { fieldType:parsedData?.fieldType,displayText: parsedData?.displayText }))
 
       setCurrentFields((prevFields) => {
         const updatedFields = new Map(prevFields);
@@ -256,7 +272,6 @@ const handleDraggablefieldClick= (key,value)=>{
             error={fieldNameHasError?.validFieldName}
             onChange={handleFieldNameChange}
             value={fieldName} // Controlled input
-            disabled={!editBtnDisabled(fieldName, fieldType, displayText)}
           />
           <TextField
             fullWidth
@@ -309,6 +324,7 @@ const handleDraggablefieldClick= (key,value)=>{
                 handleDragEnd={(e)=>handleDragEnd(e,dragItem,dragOverItem)}
                 dragItem={dragItem}
                 dragOverItem={dragOverItem}
+                isDroppedFieldActive={isDroppedFieldActive && key==fieldName}
               />
             ))}
           </Stack>
@@ -335,6 +351,7 @@ const handleDraggablefieldClick= (key,value)=>{
                 handleDragEnd={(e)=>handleDragEnd(e,dragItem,dragOverItem)}
                 dragItem={dragItem}
                 dragOverItem={dragOverItem}
+                isDroppedFieldActive={isDroppedFieldActive && key==fieldName}
               />
             ))}
           </Stack>
