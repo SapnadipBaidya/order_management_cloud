@@ -4,7 +4,7 @@ import Chip from "@mui/material/Chip";
 import { Card, Divider } from "@material-ui/core";
 import DraggableField from "../../../utils/DraggableComponents/DraggableField";
 import { makeStyles } from "@material-ui/core/styles";
-
+import SaveIcon from '@mui/icons-material/Save';
 const useStyles = makeStyles((theme) => ({
   parentContainer: {
     display: "flex",
@@ -35,7 +35,8 @@ const useStyles = makeStyles((theme) => ({
     maxHeight: "65vh",
     padding: "5vh",
     width:"25vw",
-    maxWidth:"25vw"
+    maxWidth:"25vw",
+    overflow: "scroll",
   },
 }));
 
@@ -202,9 +203,28 @@ const handleFieldOperation = React.useCallback(
 
     switch (actionType) {
       case "create":
-        setCurrentFields((prevFields) =>
-          updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
-        );
+        // Optimized split and trim process with filtering to ignore empty items
+        let fieldNameArr = fieldName.split(",").map(item => item.trim()).filter(Boolean);  // O(n)
+        let displayTextArr = displayText.split(",").map(item => item.trim()).filter(Boolean);  // O(n)
+        // Apply the same displayText to all fieldNames if only one displayText exists
+        if (fieldNameArr.length > 1 && displayTextArr.length === 1) {
+          displayTextArr = new Array(fieldNameArr.length).fill(displayTextArr[0]);  // O(m) where m = fieldNameArr.length
+        }
+        // Check that fieldNameArr and displayTextArr lengths match
+        if (fieldNameArr.length === displayTextArr.length) {
+          setCurrentFields((prevFields) => {
+            let updatedFields = new Map(prevFields);  // Copy the previous map (O(1) for shallow copy)
+            
+            // Insert fields in one pass (O(n))
+            for (let i = 0; i < fieldNameArr.length; i++) {
+              updatedFields = updateFieldInMap(updatedFields, fieldNameArr[i], { fieldType, displayText: displayTextArr[i] });
+            }
+            return updatedFields;
+          });
+        } else {
+          alert("Field name and display text arrays do not match in length.");
+        }
+        // Reset fields after the update
         resetFields();
         break;
       case "edit":
@@ -239,6 +259,22 @@ const handleFieldOperation = React.useCallback(
     handleFieldOperation("cancel");
   }, [handleFieldOperation]);
 
+  const handleSaveAll = () => {
+    function mergeMapsOptimized(existingMap, newMap) {
+      // Iterate over the newMap and add each entry to the existingMap in O(n) time
+      for (const [key, value] of newMap) {
+        existingMap.set(key, value); // Add each key-value pair from newMap to existingMap
+      }
+    }
+    setDroppedItems((prevItems) => {
+      const updatedItems = new Map(prevItems); // Create a copy to avoid mutating the original state
+      mergeMapsOptimized(updatedItems, currentFields); // Merge currentFields into the copy
+      return updatedItems; // Return the updated map
+    });
+  
+    setCurrentFields(new Map()); // Clear currentFields
+  };
+  
 
   const handleOnDrop = (event) => {
     event.preventDefault();
@@ -302,13 +338,25 @@ const handleFieldOperation = React.useCallback(
         </div>
         <Divider style={{ margin: 10 }} />
         <div className={classes.actionFooter}>
-          <Button variant="contained" onClick={handleFieldCreate} disabled={createBtnDisabled(fieldName, fieldType, displayText)}>
+          <Button
+            variant="contained"
+            onClick={handleFieldCreate}
+            disabled={createBtnDisabled(fieldName, fieldType, displayText)}
+          >
             Create
           </Button>
-          <Button variant="outlined" onClick={handleFieldEdit} disabled={editBtnDisabled(fieldName, fieldType, displayText)}>
+          <Button
+            variant="outlined"
+            onClick={handleFieldEdit}
+            disabled={editBtnDisabled(fieldName, fieldType, displayText)}
+          >
             Edit
           </Button>
-          <Button variant="text" onClick={handleFieldEditCreateCancel} disabled={cancelBtnDisabled(fieldName, fieldType, displayText)}>
+          <Button
+            variant="text"
+            onClick={handleFieldEditCreateCancel}
+            disabled={cancelBtnDisabled(fieldName, fieldType, displayText)}
+          >
             Cancel
           </Button>
         </div>
@@ -323,14 +371,25 @@ const handleFieldOperation = React.useCallback(
                 displayText={value?.displayText}
                 handleOnDelete={() => handleFieldDelete(key)}
                 handleOnClick={() => handleDraggablefieldClick(key, value)}
-                handleDragEnd={(e)=>handleDragEnd(e,dragItem,dragOverItem)}
+                handleDragEnd={(e) => handleDragEnd(e, dragItem, dragOverItem)}
                 dragItem={dragItem}
                 dragOverItem={dragOverItem}
-                isDroppedFieldActive={isDroppedFieldActive && key==fieldName}
+                isDroppedFieldActive={isDroppedFieldActive && key == fieldName}
               />
             ))}
           </Stack>
         </Card>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Button variant="outlined" endIcon={<SaveIcon />} onClick={handleSaveAll} disabled={currentFields?.size<=0}>
+          Save All
+        </Button>
       </div>
       <div>
         <h1>Drag to Here for quick saving</h1>
@@ -350,10 +409,10 @@ const handleFieldOperation = React.useCallback(
                 displayText={value?.displayText}
                 handleOnDelete={() => handleFieldDelete(key)}
                 handleOnClick={() => handleDraggablefieldClick(key, value)}
-                handleDragEnd={(e)=>handleDragEnd(e,dragItem,dragOverItem)}
+                handleDragEnd={(e) => handleDragEnd(e, dragItem, dragOverItem)}
                 dragItem={dragItem}
                 dragOverItem={dragOverItem}
-                isDroppedFieldActive={isDroppedFieldActive && key==fieldName}
+                isDroppedFieldActive={isDroppedFieldActive && key == fieldName}
               />
             ))}
           </Stack>
