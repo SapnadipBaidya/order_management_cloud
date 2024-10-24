@@ -11,6 +11,8 @@ const useStyles = makeStyles((theme) => ({
     padding: "1vh",
     margin: "1vh",
     borderRadius: "0.5vh",
+    width:"22vw",
+    maxWidth:"22vw"
   },
 }));
 
@@ -22,6 +24,7 @@ function DraggableField({fieldName,fieldType,displayText,handleOnDelete,handleOn
     event.dataTransfer.setData("text/plain", JSON.stringify(data))
   }
   return (
+    <div style={{display:"flex",flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
     <div className={classes.container} draggable={true}   onDragStart={(e)=>handleOnDragStart(e,fieldName,fieldType,displayText)} onDragEnter={()=>dragOverItem.current = fieldName} onDragEnd={(e)=>handleDragEnd(e)} onDragOver={(e)=>e.preventDefault()}>
       {" "}
       {isDroppedFieldActive? <BeenhereIcon fontSize="small" />:""}
@@ -38,8 +41,8 @@ function DraggableField({fieldName,fieldType,displayText,handleOnDelete,handleOn
        {fieldName||"fieldName"} - {fieldType||"fieldType"} - {displayText||"displayText"}
       
       </div>
-      <DeleteForeverIcon fontSize="small" onClick={handleOnDelete}/>
     </div>
+    <DeleteForeverIcon fontSize="medium" onClick={handleOnDelete} /></div>
   );
 }
 
