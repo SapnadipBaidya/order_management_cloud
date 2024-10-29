@@ -16,16 +16,16 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function DraggableField({fieldName,fieldType,displayText,handleOnDelete,handleOnClick,handleDragEnd,dragItem,dragOverItem,isDroppedFieldActive}) {
+function DraggableField({fieldName,fieldType,displayText,handleOnDelete,handleOnClick,handleDragEnd,dragItem,dragOverItem,isDroppedFieldActive, value}) {
   const classes = useStyles();
-  const handleOnDragStart =(event,fieldName,fieldType,displayText)=>{
+  const handleOnDragStart =(event,fieldName,fieldType,displayText,value)=>{
     dragItem.current = fieldName
-    let data = {fieldName:fieldName,fieldType:fieldType,displayText:displayText}
+    let data = {...value,fieldName:fieldName,fieldType:fieldType,displayText:displayText}
     event.dataTransfer.setData("text/plain", JSON.stringify(data))
   }
   return (
     <div style={{display:"flex",flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-    <div className={classes.container} draggable={true}   onDragStart={(e)=>handleOnDragStart(e,fieldName,fieldType,displayText)} onDragEnter={()=>dragOverItem.current = fieldName} onDragEnd={(e)=>handleDragEnd(e)} onDragOver={(e)=>e.preventDefault()}>
+    <div className={classes.container} draggable={true}   onDragStart={(e)=>handleOnDragStart(e,fieldName,fieldType,displayText,value)} onDragEnter={()=>dragOverItem.current = fieldName} onDragEnd={(e)=>handleDragEnd(e)} onDragOver={(e)=>e.preventDefault()}>
       {" "}
       {isDroppedFieldActive? <BeenhereIcon fontSize="small" />:""}
      

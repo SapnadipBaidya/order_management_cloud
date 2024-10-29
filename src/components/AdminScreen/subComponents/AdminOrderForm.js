@@ -5,6 +5,9 @@ import { Card, Divider } from "@material-ui/core";
 import DraggableField from "../../../utils/DraggableComponents/DraggableField";
 import { makeStyles } from "@material-ui/core/styles";
 import SaveIcon from '@mui/icons-material/Save';
+import { makeAPIcall, makeGetAPIcall } from "../../../state-management/sagas/handlers/constants";
+import axios from "axios";
+import { generateSHA256Hash } from "../../../utils/miscellaneousFunctions";
 const useStyles = makeStyles((theme) => ({
   parentContainer: {
     display: "flex",
@@ -46,17 +49,61 @@ function AdminOrderForm() {
   const [fieldType, setFieldType] = React.useState("None");
   const [fieldName, setFieldName] = React.useState("");
   const [displayText, setDisplayText] = React.useState("");
+  const [itemValue,setItemValue]= React.useState({});
   const [fieldNameHasError, setFieldNameHasError] = React.useState({
     validFieldName: true,
     validDisplayName: true,
   });
   const [currentFields, setCurrentFields] = React.useState(new Map());
-  const [dropppedItems, setDroppedItems] = React.useState(new Map());
+  const [droppedItems, setDroppedItems] = React.useState(new Map());
+  const [pollingHashForDroppedItems,setPollingHashForDroppedItems] = React.useState(""); 
+
+  const saveItems = async (droppedItems) => {
+    try {
+     axios.post('http://localhost:8081/api/polling/saveOrderFormFields',Array.from(droppedItems))
+    } catch (error) {
+      console.error("Error saving items:", error);
+    }
+  };
+
+  // Function to handle polling
+  const pollItems = async () => {
+    try {
+      const response = makeGetAPIcall('http://localhost:8081/api/polling/getOrderFormFields');
+      if (response) {
+       response.then(item=>{
+        if (item?.status==200) {
+          setDroppedItems((prevItems) => {
+            const updatedItems = new Map(prevItems); // Create a copy to avoid mutating the original state
+            mergeMapsOptimized(updatedItems, new Map(item?.data)); // Merge currentFields into the copy
+            return updatedItems; // Return the updated map
+          });
+        }return null;
+      })
+    }
+    } catch (error) {
+      console.error("Error polling items:", error);
+    }
+  };
+
+   // Initial loading and polling setup
+   React.useEffect(() => {
+    pollItems(); // Poll immediately on component load
+    const pollInterval = setInterval(pollItems, 10000); // Poll every 10 seconds
+    return () => clearInterval(pollInterval);
+  }, []);
+
+  React.useEffect(()=>{
+    console.log("sapii",pollingHashForDroppedItems)
+    saveItems(droppedItems)
+  },[pollingHashForDroppedItems])
+
 
   const [fieldTypes, setFieldTypes] = React.useState([
     { key: "number", value: "Number" },
     { key: "string", value: "String" },
     { key: "dropdown", value: "Drop Down" },
+    { key: "datefield", value: "Date Field" }
   ]);
 
   // Memoizing field types to avoid recalculating every render
@@ -65,17 +112,18 @@ function AdminOrderForm() {
       { key: "number", value: "Number" },
       { key: "string", value: "String" },
       { key: "dropdown", value: "Drop Down" },
+      { key: "datefield", value: "Date Field" }
     ],
     []
   );
 
 
   const createBtnDisabled = (fieldName, fieldType, displayText) => {
-    return !(fieldName && fieldType && displayText && !dropppedItems.get(fieldName));  
+    return !(fieldName && fieldType && displayText && !droppedItems.get(fieldName));  
   };
 
   const editBtnDisabled = (fieldName, fieldType, displayText) => {
-    return !(dropppedItems.get(fieldName));
+    return !(droppedItems.get(fieldName));
   };
 
   const cancelBtnDisabled = (fieldName, fieldType, displayText) => {
@@ -123,7 +171,7 @@ function AdminOrderForm() {
     };
   
     // Check for the field in both maps
-    handleFieldClickIfExists(dropppedItems);
+    handleFieldClickIfExists(droppedItems);
     handleFieldClickIfExists(currentFields);
   
     // Update field name error state
@@ -152,6 +200,7 @@ function AdminOrderForm() {
 
       return updatedDroppedItems;
     });
+    generateSHA256Hash(new Date()).then(e=>setPollingHashForDroppedItems(e));
     setFieldName("");
     setDisplayText("");
     setFieldType("");
@@ -160,11 +209,11 @@ function AdminOrderForm() {
   };
   const handleDragEnd = (e, dragItem, dragOverItem) => {
     // Get the current items in the Map
-    dropppedItems.get(dragItem.current);
-    dropppedItems.get(dragOverItem.current);
+    droppedItems.get(dragItem.current);
+    droppedItems.get(dragOverItem.current);
 
     // Convert Map to an array to allow swapping
-    let swappableArr = Array.from(dropppedItems);
+    let swappableArr = Array.from(droppedItems);
 
     // Find the index of the dragItem and dragOverItem in the array
     let dragItemIndex = swappableArr.findIndex(item => item[0] === dragItem.current);
@@ -172,9 +221,8 @@ function AdminOrderForm() {
 
     // Swap the items in the array using array destructuring
     [swappableArr[dragItemIndex], swappableArr[dragOverItemIndex]] = [swappableArr[dragOverItemIndex], swappableArr[dragItemIndex]];
-
-    // Convert the array back to a Map after swapping
     setDroppedItems(new Map(swappableArr));
+    generateSHA256Hash(new Date()).then(e=>setPollingHashForDroppedItems(e));
 }
 const [isDroppedFieldActive,setIsDroppedFieldActive] = React.useState(false);
 
@@ -183,6 +231,7 @@ const handleDraggablefieldClick= (key,value)=>{
     setFieldName(key)
     setDisplayText(value?.displayText)
     handleFieldTypeChange(value?.fieldType)
+    setItemValue(value)
 }
 
   // Helper function to add or update field in a given map
@@ -227,8 +276,10 @@ const handleFieldOperation = React.useCallback(
         resetFields();
         break;
       case "edit":
-        setDroppedItems((prevFields) =>
-          updateFieldInMap(prevFields, fieldName, { fieldType, displayText })
+        setDroppedItems((prevFields) =>{ 
+          generateSHA256Hash(new Date()).then(e=>setPollingHashForDroppedItems(e));
+          return updateFieldInMap(prevFields, fieldName, {...itemValue, fieldType, displayText })}
+         
         );
         break;
       default:
@@ -240,6 +291,13 @@ const handleFieldOperation = React.useCallback(
   [fieldName, fieldType, displayText, memoizedFieldTypes]
 );
 
+
+function mergeMapsOptimized(existingMap, newMap) {
+  // Iterate over the newMap and add each entry to the existingMap in O(n) time
+  for (const [key, value] of newMap) {
+    existingMap.set(key, value); // Add each key-value pair from newMap to existingMap
+  }
+}
 
 
   // For creating a new field
@@ -259,19 +317,15 @@ const handleFieldOperation = React.useCallback(
   }, [handleFieldOperation]);
 
   const handleSaveAll = () => {
-    function mergeMapsOptimized(existingMap, newMap) {
-      // Iterate over the newMap and add each entry to the existingMap in O(n) time
-      for (const [key, value] of newMap) {
-        existingMap.set(key, value); // Add each key-value pair from newMap to existingMap
-      }
-    }
     setDroppedItems((prevItems) => {
       const updatedItems = new Map(prevItems); // Create a copy to avoid mutating the original state
       mergeMapsOptimized(updatedItems, currentFields); // Merge currentFields into the copy
+      generateSHA256Hash(new Date()).then(e=>setPollingHashForDroppedItems(e));
       return updatedItems; // Return the updated map
     });
   
     setCurrentFields(new Map()); // Clear currentFields
+
   };
   
 
@@ -282,7 +336,10 @@ const handleFieldOperation = React.useCallback(
     const data = event.dataTransfer.getData("text/plain");
     if (data) {
       const parsedData = JSON.parse(data);
-      setDroppedItems((prevFields) =>   updateFieldInMap(prevFields, parsedData?.fieldName, { fieldType:parsedData?.fieldType,displayText: parsedData?.displayText }))
+      setDroppedItems((prevFields) =>   {
+        let data  = updateFieldInMap(prevFields, parsedData?.fieldName, {...parsedData })
+        generateSHA256Hash(new Date()).then(e=>setPollingHashForDroppedItems(e));
+        return data})
 
       setCurrentFields((prevFields) => {
         const updatedFields = new Map(prevFields);
@@ -374,6 +431,7 @@ const handleFieldOperation = React.useCallback(
                 dragItem={dragItem}
                 dragOverItem={dragOverItem}
                 isDroppedFieldActive={isDroppedFieldActive && key == fieldName}
+                value={value}
               />
             ))}
           </Stack>
@@ -400,7 +458,7 @@ const handleFieldOperation = React.useCallback(
           }}
         >
           <Stack direction="column" spacing={1}>
-            {Array.from(dropppedItems.entries()).map(([key, value]) => (
+            {Array.from(droppedItems.entries()).map(([key, value]) => (
               <DraggableField
                 key={key}
                 fieldName={key}
@@ -412,6 +470,7 @@ const handleFieldOperation = React.useCallback(
                 dragItem={dragItem}
                 dragOverItem={dragOverItem}
                 isDroppedFieldActive={isDroppedFieldActive && key == fieldName}
+                value={value}
               />
             ))}
           </Stack>
